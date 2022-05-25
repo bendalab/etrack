@@ -92,4 +92,6 @@ if __name__ == "__main__":
         second2 = int(marker_positions[0]['top right corner'][1])
         result = cv.cut_out_video(file_name, destination_folder, (first1, first2), (second1, second2))
         print(result)
-    
+
+
+        # next: with argparse to take marker positions for every video
