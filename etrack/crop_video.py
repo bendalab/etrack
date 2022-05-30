@@ -40,44 +40,35 @@ class CropVideo():
         plt.close()
         return marker_positions
 
-
+ 
     def cut_out_video(self, video_path: str, output_dir: str, start_pix: tuple, size: tuple):
         ext = os.path.basename(video_path).strip().split('.')[-1]
         print(ext)
+        
         output_path = video_path.split('/')[-1].split('.')[:-1]
         output_path = '.'.join(output_path)
+        print(output_path)
+        
         if ext not in ['mp4', 'avi', 'flv']:
             raise Exception('format error')
-        result = os.path.join(output_dir, '{}.{}'.format(output_path, ext))
-        result_path = result.split(ext)[0]
-        print(output_path)
+        result = os.path.join(output_dir, '{}_out.{}'.format(output_path, ext))
+        
         ff = FFmpeg(inputs={video_path: None},
-                    outputs={
-                        result: '-filter:v crop={}:{}:{}:{} {}_out'.format(size[0] - start_pix[0], start_pix[1] - size[1], start_pix[0], size[1], result)})
-        embed()
-        quit()
+                    outputs={result: f'-y -filter:v crop={size[0]-start_pix[0]}:{start_pix[1] - size[1]}:{start_pix[0]}:{size[1]}'}) 
+                        # crop=out_w:out_h:x:y
         ff.run()
+        # embed()
+        # quit()
         return result
-'''
-start_pix                                                               
-Out[1]: (167, 1281)
+  
 
-In [2]: size                                                                    
-Out[2]: (1887, 221)
-
-ffmpeg -i in.mp4 -filter:v "crop=out_w:out_h:x:y" out.mp4
-
-Where the options are as follows:
-
-    out_w is the width of the output rectangle
-    out_h is the height of the output rectangle
-    x and y specify the top left corner of the output rectangle
-
-'''
 
 if __name__ == "__main__":    
     
     for file_name in glob.glob("/home/efish/etrack/videos/*"): 
+        # if file_name == '/home/efish/etrack/videos/2022.03.28_7.mp4':
+        
+        print(file_name)
         frame_number = 10
         cv = CropVideo(file_name=file_name)
         
