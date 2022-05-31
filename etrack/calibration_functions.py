@@ -1,6 +1,8 @@
 from turtle import left
 import matplotlib.pyplot as plt 
 import numpy as np
+import os
+import cv2
 from IPython import embed
 from etrack import MarkerTask, ImageMarker
 
@@ -15,6 +17,29 @@ def mark_crop_positions(self):
         np.save('marker_positions', marker_positions)
         plt.close() # perhaps not necessary
         return marker_positions
+
+
+def plot_video(filename, frame_number):
+        if not os.path.exists(filename):
+            raise IOError("file %s does not exist!" % filename)
+        video = cv2.VideoCapture()
+        video.open(filename)
+        frame_counter = 0
+        success = True
+        frame = None
+        while success and frame_counter <= frame_number:    # iterating until frame_counter == frame_number --> success (True)
+            print("Reading frame: %i" % frame_counter, end="\r")
+            success, frame = video.read()
+            frame_counter += 1
+        if success:
+           plt.imshow(frame)    # plot wanted frame of video
+        else:
+           print("Could not read frame number %i either failed to open movie or beyond maximum frame number!" % frame_number)
+           return []
+        plt.title(filename)
+        plt.ion()   # turn on interactive mode
+        plt.show()   # block=False allows to continue interact in terminal while the figure is open
+        return filename
 
 
 def assign_marker_positions(marker_positions):

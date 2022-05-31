@@ -1,21 +1,13 @@
-from csv import QUOTE_NONNUMERIC
-from multiprocessing import allow_connection_pickling
-from re import M
-from turtle import left
-from xml.dom.expatbuilder import FILTER_ACCEPT
-from cv2 import MARKER_TRIANGLE_UP, calibrationMatrixValues, mean, threshold
+# from types import NoneType
 import matplotlib.pyplot as plt 
 import numpy as np
-import cv2
-import os
-import sys
 import glob
 import os
-import uuid
+import math
+import argparse
 from ffmpy import FFmpeg
 from IPython import embed
 from calibration_functions import *
-
 
 
 class CropVideo():
@@ -62,27 +54,41 @@ class CropVideo():
         return result
   
 
-
 if __name__ == "__main__":    
     
-    for file_name in glob.glob("/home/efish/etrack/videos/*"): 
+    parser = argparse.ArgumentParser(description='Crop video to wanted pixel parameters')
+    parser.add_argument('-p', action='store_true', help='plot the video to check fit of cropping parameters')
+    parser.add_argument('-c', action='store_true', help='set cropping parameters manually for each video')
+    parser.add_argument('-d', type=str, help='destination folder for cropped videos')    # const='/home/efish/etrack/cropped_videos/', 
+    parser.add_argument('-f', type=int, help='frame number to plot, default=10')    #  const='10',
+    args = parser.parse_args()
+
+    print(args.p)
+    for enu, file_name in enumerate(glob.glob("/home/efish/etrack/videos/*")): 
         # if file_name == '/home/efish/etrack/videos/2022.03.28_7.mp4':
-        
         print(file_name)
-        frame_number = 10
         cv = CropVideo(file_name=file_name)
         
+        frame_number = 10
         destination_folder = "/home/efish/etrack/cropped_videos/"
-        
+        # if args.d or args.f != None:
+        #     frame_number = args.f
+        #     destination_folder = args.d
 
-        marker_positions = cv.mark_crop_positions(file_name=file_name, frame_number=frame_number)
+        print(enu)
+        if enu == 0 or args.c:
+            marker_positions = cv.mark_crop_positions(file_name, frame_number)
+        elif args.p:
+            file_name = plot_video(file_name, frame_number)
+            
+        else:
+            pass
+
         print('marker positions done')
-        first1 = int(marker_positions[0]['bottom left corner'][0]) 
-        first2 = int(marker_positions[0]['bottom left corner'][1])
-        second1 = int(marker_positions[0]['top right corner'][0])
-        second2 = int(marker_positions[0]['top right corner'][1])
-        result = cv.cut_out_video(file_name, destination_folder, (first1, first2), (second1, second2))
+        bottom_left_x = int(marker_positions[0]['bottom left corner'][0]) 
+        bottom_left_y = int(marker_positions[0]['bottom left corner'][1])
+        top_right_x= int(marker_positions[0]['top right corner'][0])
+        top_right_y = int(marker_positions[0]['top right corner'][1])
+
+        result = cv.cut_out_video(file_name, destination_folder, (bottom_left_x, bottom_left_y), (top_right_x, top_right_y))
         print(result)
-
-
-        # next: with argparse to take marker positions for every video
