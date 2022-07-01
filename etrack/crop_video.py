@@ -5,6 +5,7 @@ import glob
 import os
 import math
 import argparse
+import pprint
 from ffmpy import FFmpeg
 from IPython import embed
 from calibration_functions import *
@@ -18,7 +19,7 @@ class CropVideo():
         self._file_name = file_name
         self.mark_crop_positions
         self.cut_out_video
-        self.plot_video
+        self.plot_frame
         self.crop_frame
 
 
@@ -27,12 +28,11 @@ class CropVideo():
         task = MarkerTask("crop area", ["bottom left corner", "top left corner", "top right corner", "bottom right corner"], "Mark crop area")
         im = ImageMarker([task])
         
-        marker_positions = im.mark_movie(file_name, frame_number)
-        print(marker_positions)
-
-        np.save('marker_positions', marker_positions)
+        marker_crop_positions = im.mark_movie(file_name, frame_number)
         plt.close()
-        return marker_positions
+
+        # np.save('marker_crop_positions', marker_crop_positions)
+        return marker_crop_positions
 
  
     def cut_out_video(self, video_path: str, output_dir: str, start_pix: tuple, size: tuple):
@@ -56,10 +56,10 @@ class CropVideo():
         return result
     
 
-    def crop_frame(self, frame, marker_positions):
+    def crop_frame(self, frame, marker_crop_positions):
 
         # load the four marker positions 
-        bottom_left_x, bottom_left_y, bottom_right_x, bottom_right_y, top_left_x, top_left_y, top_right_x, top_right_y = assign_marker_positions(marker_positions)
+        bottom_left_x, bottom_left_y, bottom_right_x, bottom_right_y, top_left_x, top_left_y, top_right_x, top_right_y = assign_marker_positions(marker_crop_positions)
 
         # define boundaries of frame, taken by average of points on same line but slightly different pixel values
         left_bound = int(np.mean([bottom_left_x, top_left_x]))
@@ -74,7 +74,7 @@ class CropVideo():
         return cropped_frame
 
 
-    def plot_video(self, filename, frame_number, marker_positions):
+    def plot_frame(self, filename, frame_number, marker_crop_positions):
         if not os.path.exists(filename):
             raise IOError("file %s does not exist!" % filename)
         video = cv2.VideoCapture()
@@ -87,7 +87,7 @@ class CropVideo():
             success, frame = video.read()
             frame_counter += 1
         if success:
-            cropped_frame = cv.crop_frame(frame, marker_positions)  
+            cropped_frame = cv.crop_frame(frame, marker_crop_positions)  
             
             fig, ax = plt.subplots()
             ax.imshow(cropped_frame)    # plot wanted frame of video
@@ -102,37 +102,58 @@ class CropVideo():
 
 if __name__ == "__main__":    
     
-    parser = argparse.ArgumentParser(description='Crop video to wanted pixel parameters')
-    parser.add_argument('-p', action='store_true', help='plot the video to check fit of cropping parameters')
-    parser.add_argument('-c', action='store_true', help='set cropping parameters manually for each video')
-    parser.add_argument('-d', type=str, help='destination folder for cropped videos', default='/home/efish/etrack/cropped_videos/') 
-    parser.add_argument('-f', type=int, help='frame number to plot, default=10', default=10)
+    parser = argparse.ArgumentParser(description='Crop video to wanted pixel parameters', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('-pf', '--plot_frame', action='store_true', help='crop interface for first video, afterwards plot a wanted frame of each video to check cropping parameters; can be combined with crop_videos')
+    parser.add_argument('-cv', '--crop_video', action='store_true', help='set cropping parameters manually for each video via interface; can be combined with plot_frame')
+    parser.add_argument('-d', '--destination', type=str, metavar='', help='destination folder for cropped videos', default='/home/efish/etrack/cropped_videos/')
+    parser.add_argument('-s', '--source', type=str, metavar='', help='source folder for videos', default='/home/efish/etrack/videos/*')
+    parser.add_argument('-f', '--frame', type=int, metavar='', help='frame number to plot', default=10)
+    parser.add_argument('-pp', '--print_parameter', type=str, metavar='', help='print cropping parameters, path of wanted video as input') #, default='/home/efish/etrack/videos/2022.03.28_5.mp4')
+    parser.add_argument('-scp', '--set_crop_parameter', type=int, metavar='', help='type in cropping values manually, needed parameters for manual cropping (use same input shape):\n bottom_left_x bottom_left_y top_right_x top_right_y', nargs=4)
     args = parser.parse_args()
-
-    for enu, file_name in enumerate(glob.glob("/home/efish/etrack/videos/*")): 
+    
+    for enu, file_name in enumerate(sorted(glob.glob(args.source))):
         print(file_name)
         cv = CropVideo(file_name)
+   
+        if args.print_parameter != None:
+            marker_crop_positions = cv.mark_crop_positions(args.print_parameter, args.frame)
+            print('needed parameters for manual cropping:\n bottom_left_x, bottom_left_y, top_right_x, top_right_y')
+            pprint.pprint(marker_crop_positions)
+            break
 
-        if enu == 0:    # first run always cropping to get first marker positions
-            marker_positions = cv.mark_crop_positions(file_name, args.f)
+        elif args.set_crop_parameter != None:
+            result = cv.cut_out_video(file_name, args.destination, (args.set_crop_parameter[0], args.set_crop_parameter[1]), (args.set_crop_parameter[2], args.set_crop_parameter[3]))    # actual cropping of video
+            continue
+
+        elif enu == 0:    # first run always cropping to get first marker positions
+            marker_crop_positions = cv.mark_crop_positions(file_name, args.frame)
             print('enu=0')
-            
+        
         else:   # for each other file
-            if args.c and args.p == True:   # crop positions and plotting
-                marker_positions = cv.mark_crop_positions(file_name, args.f)
-                file_name = cv.plot_video(file_name, args.f, marker_positions)
-            elif args.c == False and args.p == True:    # only plotting
-                file_name = cv.plot_video(file_name, args.f, marker_positions)
-            elif args.c == True and args.p == False:    # only crop positions
-                marker_positions = cv.mark_crop_positions(file_name, args.f)
+            if args.crop_video and args.plot_frame == True:   # crop positions and plotting
+                marker_crop_positions = cv.mark_crop_positions(file_name, args.frame)
+                file_name = cv.plot_frame(file_name, args.frame, marker_crop_positions)
+            elif args.crop_video == False and args.plot_frame == True:    # only plotting
+                file_name = cv.plot_frame(file_name, args.frame, marker_crop_positions)
+            elif args.crop_video == True and args.plot_frame == False:    # only crop positions
+                marker_crop_positions = cv.mark_crop_positions(file_name, args.frame)
             else:
                 pass
         
-        bottom_left_x = int(marker_positions[0]['bottom left corner'][0]) 
-        bottom_left_y = int(marker_positions[0]['bottom left corner'][1])
-        top_right_x= int(marker_positions[0]['top right corner'][0])
-        top_right_y = int(marker_positions[0]['top right corner'][1])
-
-        result = cv.cut_out_video(file_name, args.d, (bottom_left_x, bottom_left_y), (top_right_x, top_right_y))    # actual cropping of video
+        bottom_left_x = int(marker_crop_positions[0]['bottom left corner'][0]) 
+        bottom_left_y = int(marker_crop_positions[0]['bottom left corner'][1])
+        top_right_x= int(marker_crop_positions[0]['top right corner'][0])
+        top_right_y = int(marker_crop_positions[0]['top right corner'][1])
         
+        result = cv.cut_out_video(file_name, args.destination, (bottom_left_x, bottom_left_y), (top_right_x, top_right_y))    # actual cropping of video
+       
+
+# +++++++++++++++++++++++++++++++++++++++++
+        # overall working
+        # missing: set_crop_parameter working but not in combination with others like plot_frame
+        # documentation!
+        
+        # next: put this in pyQT6!
+# +++++++++++++++++++++++++++++++++++++++++
         
