@@ -95,8 +95,7 @@ class CropVideo():
         
         return filename
 
-
-if __name__ == "__main__":    
+def main(args: list=None):
     # parser arguments: use -h or --help! 
     # in terminal callable via corresponding -___ or --___ input
     # '--print_parameters' and '--set_crop_parameter have mandatory inputs if executed
@@ -108,7 +107,7 @@ if __name__ == "__main__":
     parser.add_argument('-f', '--frame', type=int, metavar='', help='frame number to plot', default=10)
     parser.add_argument('-pp', '--print_parameter', type=str, metavar='', help='print cropping parameters, path of wanted video as MANDATORY input', default='/home/efish/etrack/videos/2022.03.28_5.mp4')
     parser.add_argument('-scp', '--set_crop_parameter', type=int, metavar='', help='type in cropping values manually, needed MANDATORY parameters for manual cropping (use same input shape):\n bottom_left_x bottom_left_y top_right_x top_right_y', nargs=4)
-    args = parser.parse_args()
+    args = parser.parse_args(args)
     
     for enu, file_name in enumerate(sorted(glob.glob(args.source))):
         print(file_name)
@@ -132,10 +131,13 @@ if __name__ == "__main__":
             if args.crop_video and args.plot_frame == True:   # crop positions AND plotting
                 marker_crop_positions = cv.mark_crop_positions(file_name, args.frame)
                 file_name = cv.plot_frame(file_name, args.frame, marker_crop_positions)
+
             elif args.crop_video == False and args.plot_frame == True:    # ONLY plotting
                 file_name = cv.plot_frame(file_name, args.frame, marker_crop_positions)
+
             elif args.crop_video == True and args.plot_frame == False:    # ONLY crop positions
                 marker_crop_positions = cv.mark_crop_positions(file_name, args.frame)
+
             else:
                 pass
         
@@ -146,6 +148,10 @@ if __name__ == "__main__":
         top_right_y = int(marker_crop_positions[0]['top right corner'][1])
         
         result = cv.cut_out_video(file_name, args.destination, (bottom_left_x, bottom_left_y), (top_right_x, top_right_y))    # actual cropping of video
+
+
+if __name__ == "__main__":    
+    main()
        
 
 # +++++++++++++++++++++++++++++++++++++++++

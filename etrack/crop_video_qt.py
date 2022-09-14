@@ -6,103 +6,132 @@ import sys
 
 from crop_video import CropVideo as cv
 
+from IPython import embed
+
 # TO DO:
 
 # implement option to change default frame number value?
     # same for default video file path
 # toggle buttons to make different combinations of VideoTools
+# add only unique files (when using the add Button)?
 
 
 class FileSelector(QWidget):
 
     def __init__(self):
-        super(FileSelector, self).__init__()
+        super().__init__()
+
+        self._open_file
+        self._frame_spinbox_value
 
         hl = QHBoxLayout()
         vl = QVBoxLayout()
         
-        self._fileList = QListWidget()
+        self._file_list = QListWidget()
         group = QGroupBox()
         
         addButton = QPushButton('add')
-        addButton.clicked.connect(self._openFile)
+        addButton.clicked.connect(self._open_file)
 
         removeButton = QPushButton('remove')
-        removeButton.clicked.connect(self._removeFile)
+        removeButton.clicked.connect(self._remove_file)
 
-        self.frameSpinBox = QSpinBox()
-        self.frameSpinBox.setValue(10)
-        self.frameSpinBox.valueChanged.connect(self.frameSpinBoxValue)
+        self.frame_spinbox = QSpinBox()
+        self.frame_spinbox.setValue(10)
+        self.frame_spinbox.valueChanged.connect(self._frame_spinbox_value)
         
         vl.addWidget(addButton)
         vl.addWidget(removeButton)
         group.setLayout(vl)
         
-        hl.addWidget(self._fileList)
+        hl.addWidget(self._file_list)
         hl.addWidget(group)
-        hl.addWidget(self.frameSpinBox)
+        hl.addWidget(self.frame_spinbox)
         self.setLayout(hl)
+    
+    def item_list(self):
+        # PROBLEM: QListWidget items not really accessable, how do I get it raw?
+        return self._file_list.selectedItems()
+    
+    def spinbox_value(self):
+        return self.frame_spinbox.value()
 
-
-    def _openFile(self):
-        fileName = QFileDialog.getOpenFileName(self, str("Select Video File"), "/home/efish/etrack", str('Video Files(*.mp4)'))
+    def _open_file(self):
+        fileName = QFileDialog.getOpenFileNames(self, str("Select Video File"), "/home/efish/etrack", str('Video Files(*.mp4)'))
         print(fileName)
-        self._fileList.addItem(fileName)
-        itemList = self._fileList.selectedItems()
-        return itemList
+        self._file_list.addItems(fileName[0])
+        # add only unique files?
 
-    def _removeFile(self):
+    def _remove_file(self):
         print('remove File')
 
-        listItems = self._fileList.selectedItems()
+        listItems = self._file_list.selectedItems()
         if not listItems:
             return        
         for item in listItems:
-            self._fileList.takeItem(self._fileList.row(item))
+            self._file_list.takeItem(self._file_list.row(item))
     
 
-    def frameSpinBoxValue(self):
-        print("current value:"+str(self.frameSpinBox.value()))
-        value = self.frameSpinBox.value()
-        return value
-
+    def _frame_spinbox_value(self):
+        print("current value:"+str(self.frame_spinbox.value()))
+        self._spinbox_value = self.frame_spinbox.value()
+    
 
 class VideoTools(QWidget):
     
-    def __init__(self):
-        super(VideoTools, self).__init__()
-
-
+    def __init__(self, file_selector: FileSelector):
+        super().__init__()
+        
+        self.file_selector = file_selector
+        
         hl = QHBoxLayout()
 
-        plotButton = QPushButton('plot frame')
-        plotButton.clicked.connect(self._plotFrame)
-        cropButton = QPushButton('crop video')
-        cropButton.clicked.connect(self._cropVideo)
-        parameterButton = QPushButton('print parameter')
-        parameterButton.clicked.connect(self._printParameter)
-        setcropButton = QPushButton('set crop parameter')
-        setcropButton.clicked.connect(self._setcropParameter)
+        mark_crop_positions_btn = QPushButton('mark crop positions')
+        mark_crop_positions_btn.clicked.connect(self.mark_crop_positions)
 
-        hl.addWidget(plotButton)
-        hl.addWidget(cropButton)
-        hl.addWidget(parameterButton)
-        hl.addWidget(setcropButton)
+        plot_btn = QPushButton('plot frame')
+        plot_btn.setCheckable(True)
+        plot_btn.clicked.connect(self.plot_frame)
+
+        crop_btn = QPushButton('crop video')
+        crop_btn.clicked.connect(self.crop_video)
+        
+        parameter_btn = QPushButton('print parameter')
+        parameter_btn.clicked.connect(self.print_parameter)
+        
+        set_crop_btn = QPushButton('set crop parameter')
+        set_crop_btn.clicked.connect(self.set_crop_parameter)
+
+        hl.addWidget(mark_crop_positions_btn)
+        hl.addWidget(plot_btn)
+        hl.addWidget(crop_btn)
+        hl.addWidget(parameter_btn)
+        hl.addWidget(set_crop_btn)
 
         self.setLayout(hl)
 
-    def _plotFrame(self, ):
+    def mark_crop_positions(self):
+        frame_number = self.file_selector.spinbox_value()
+        file_list = self.file_selector.item_list()
+        for file in file_list:
+            self.marker_crop_positions = cv.mark_crop_positions(self, file, frame_number)
+        embed()
+        quit()
+
+        pass
+
+    def plot_frame(self):
         print('plot frame')
         # get marker positions
-        cv.plot_frame(itemList, args.frame, marker_crop_positions)
+        
 
-    def _cropVideo(self):
+    def crop_video(self):
         print('crop video')
     
-    def _printParameter(self):
+    def print_parameter(self):
         print('print parameter')
     
-    def _setcropParameter(self):
+    def set_crop_parameter(self):
         print('set crop parameter')
         
 
@@ -113,7 +142,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("My App")
         
         self.fs = FileSelector()
-        self.vt = VideoTools()
+        self.vt = VideoTools(self.fs)
 
         layout = QVBoxLayout()
         layout.addWidget(self.fs)
