@@ -21,13 +21,10 @@ class FileSelector(QWidget):
     def __init__(self):
         super().__init__()
 
-        self._open_file
-        self._frame_spinbox_value
-
         hl = QHBoxLayout()
         vl = QVBoxLayout()
         
-        self._file_list = QListWidget()
+        self._display_file_list = QListWidget()
         group = QGroupBox()
         
         addButton = QPushButton('add')
@@ -44,39 +41,41 @@ class FileSelector(QWidget):
         vl.addWidget(removeButton)
         group.setLayout(vl)
         
-        hl.addWidget(self._file_list)
+        hl.addWidget(self._display_file_list)
         hl.addWidget(group)
         hl.addWidget(self.frame_spinbox)
         self.setLayout(hl)
     
-    def item_list(self):
-        # PROBLEM: QListWidget items not really accessable, how do I get it raw?
-        return self._file_list.selectedItems()
-    
-    def spinbox_value(self):
-        return self.frame_spinbox.value()
 
     def _open_file(self):
         fileName = QFileDialog.getOpenFileNames(self, str("Select Video File"), "/home/efish/etrack", str('Video Files(*.mp4)'))
-        print(fileName)
-        self._file_list.addItems(fileName[0])
-        # add only unique files?
-        
-
+        self._display_file_list.addItems(fileName[0])
+             
     def _remove_file(self):
         print('remove File')
 
-        listItems = self._file_list.selectedItems()
+        listItems = self._display_file_list.selectedItems()
         if not listItems:
             return        
         for item in listItems:
-            self._file_list.takeItem(self._file_list.row(item))
+            self._display_file_list.takeItem(self._display_file_list.row(item))
     
-
     def _frame_spinbox_value(self):
         print("current value:"+str(self.frame_spinbox.value()))
         self._spinbox_value = self.frame_spinbox.value()
     
+    def item_list(self):
+        self._file_list = []
+        for i in range(self._display_file_list.count()): 
+            item = self._display_file_list.item(i).text()
+            if item not in self._file_list:
+                self._file_list.append(self._display_file_list.item(i).text())
+        
+        return self._file_list
+    
+    def spinbox_value(self):
+        return self.frame_spinbox.value()
+
 
 class VideoTools(QWidget):
     
@@ -114,10 +113,12 @@ class VideoTools(QWidget):
     def mark_crop_positions(self):
         frame_number = self.file_selector.spinbox_value()
         file_list = self.file_selector.item_list()
-        for file in file_list:
-            self.marker_crop_positions = cv.mark_crop_positions(self, file, frame_number)
+        print('in mark crop position')
         embed()
         quit()
+
+        for file in file_list:
+            self.marker_crop_positions = cv.mark_crop_positions(self, file, frame_number)
 
         pass
 
