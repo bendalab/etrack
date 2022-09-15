@@ -61,6 +61,7 @@ class FileSelector(QWidget):
         print(fileName)
         self._file_list.addItems(fileName[0])
         # add only unique files?
+        
 
     def _remove_file(self):
         print('remove File')
