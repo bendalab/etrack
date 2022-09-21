@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 import sys
 
-from crop_video import CropVideo as cv
+from crop_video import CropVideo
 
 from IPython import embed
 
@@ -33,16 +33,12 @@ class FileSelector(QWidget):
         removeButton = QPushButton('remove')
         removeButton.clicked.connect(self._remove_file)
         
-        refreshButton = QPushButton('refresh')
-        refreshButton.clicked.connect(self._refresh_file)
-
         self.frame_spinbox = QSpinBox()
         self.frame_spinbox.setValue(10)
         self.frame_spinbox.valueChanged.connect(self._frame_spinbox_value)
         
         vl.addWidget(addButton)
         vl.addWidget(removeButton)
-        vl.addWidget(refreshButton)
         group.setLayout(vl)
         
         hl.addWidget(self._display_file_list)
@@ -52,18 +48,20 @@ class FileSelector(QWidget):
     
 
     def _open_file(self):
-        fileName = QFileDialog.getOpenFileNames(self, str("Select Video File"), "/home/efish/etrack", str('Video Files(*.mp4)'))
+        fileName = QFileDialog.getOpenFileNames(self, str("Select Video Files"), "/home/student/etrack/videos", str('Video Files(*.mp4)'))
         print(fileName[0], type(fileName[0]))
-        self._fileName_new = []
-        for f in fileName[0]:
-            if f not in self._fileName_new:
-                self._fileName_new.append(f)
-        # embed()
-        # quit()
-        # each file unique
-    
-    def _refresh_file(self): # improvised...
-        self._display_file_list.addItems(self._fileName_new)
+        self._display_file_list.addItems(fileName[0])
+        
+        # each file unique?:
+        
+        # self._fileName_new = []
+        # for f in fileName[0]:
+        #     if f not in self._fileName_new:
+        #         self._fileName_new.append(f)
+        
+        # def _refresh_file(self): # improvised...
+        #     self._display_file_list.addItems(self._fileName_new)
+        
              
     def _remove_file(self):
         print('remove File')
@@ -129,15 +127,15 @@ class VideoTools(QWidget):
         self.file_list = self.file_selector.item_list()
         self.all_marker_crop_positions = []
         for file in self.file_list:
-            self.marker_crop_positions = cv.parser_mark_crop_positions(self, file, self.frame_number)
+            self.marker_crop_positions = CropVideo.parser_mark_crop_positions(file, self.frame_number)
             self.all_marker_crop_positions.append(self.marker_crop_positions)
 
     def plot_frame(self):
         for file, marker in zip(self.file_list, self.all_marker_crop_positions):
-            file_name = cv.parser_plot_frame(self, file, self.frame_number, marker[0])
-            # problem: marker_positions[0] (list in list to much or less)
-        embed()
-        quit()
+            file_name = CropVideo.parser_plot_frame(file, self.frame_number, marker)
+            # problem: plt.subplots already making window, plt.show showing figure either as black screen or extremly late..
+            # but neither CPU or RAM overloaded.. figure showing right before closing embed
+        
         print('plot frame')
         # get marker positions
         
@@ -155,11 +153,11 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("My App")
+        self.setWindowTitle("etrack app")
         
         self.fs = FileSelector()
         self.vt = VideoTools(self.fs)
-
+    
         layout = QVBoxLayout()
         layout.addWidget(self.fs)
         layout.addWidget(self.vt)

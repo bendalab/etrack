@@ -1,4 +1,4 @@
-from turtle import left
+# from turtle import left
 import matplotlib.pyplot as plt 
 import numpy as np
 import os
@@ -43,7 +43,7 @@ def plot_video(filename, frame_number):
         return filename
 
 
-def assign_marker_positions(marker_positions):
+def assign_marker_positions(marker_positions):  
     bottom_left_x = round(marker_positions[0]['bottom left corner'][0], 2)
     bottom_left_y = round(marker_positions[0]['bottom left corner'][1], 2)
     bottom_right_x = round(marker_positions[0]['bottom right corner'][0], 2)

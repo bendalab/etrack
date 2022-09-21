@@ -4,6 +4,7 @@ import numpy as np
 import glob
 import os
 import math
+import cv2
 import argparse
 import pprint
 from ffmpy import FFmpeg
@@ -13,17 +14,11 @@ from calibration_functions import *
 
 class CropVideo():
     
-    def __init__(self, file_name) -> None: 
+    def __init__(self) -> None: 
         super().__init__()
 
-        self._file_name = file_name
-        self.parser_mark_crop_positions
-        self.parser_cut_out_video_parser
-        self.parser_plot_frame
-        self.parser_crop_frame
-
-
-    def parser_mark_crop_positions(self, file_name, frame_number):
+    @staticmethod
+    def parser_mark_crop_positions(file_name, frame_number):
         
         task = MarkerTask("crop area", ["bottom left corner", "top left corner", "top right corner", "bottom right corner"], "Mark crop area")
         im = ImageMarker([task])
@@ -53,7 +48,8 @@ class CropVideo():
         return result
     
 
-    def parser_crop_frame(self, frame, marker_crop_positions):
+    @staticmethod
+    def parser_crop_frame(data_frame, marker_crop_positions):
 
         # load the four marker positions 
         bottom_left_x, bottom_left_y, bottom_right_x, bottom_right_y, top_left_x, top_left_y, top_right_x, top_right_y = assign_marker_positions(marker_crop_positions)
@@ -65,12 +61,12 @@ class CropVideo():
         bottom_bound = int(np.mean([bottom_left_y, bottom_right_y]))
         
         # crop the frame by boundary values
-        cropped_frame = frame[top_bound:bottom_bound, left_bound:right_bound]
+        cropped_frame = data_frame[top_bound:bottom_bound, left_bound:right_bound]
         # cropped_frame = np.mean(cropped_frame, axis=2)    # mean over 3rd dimension (RGB/color values)
         return cropped_frame
 
-
-    def parser_plot_frame(self, filename, frame_number, marker_crop_positions):
+    @staticmethod
+    def parser_plot_frame(filename, frame_number, marker_crop_positions):
         if not os.path.exists(filename):
             raise IOError("file %s does not exist!" % filename)
         video = cv2.VideoCapture()
@@ -83,16 +79,16 @@ class CropVideo():
             success, frame = video.read()   # frame = actual video data matrix
             frame_counter += 1
         if success:
-            cropped_frame = crop_frame(frame, marker_crop_positions) # crop video frame
-            embed()
-            quit()
+            cropped_frame = CropVideo.parser_crop_frame(frame, marker_crop_positions) # crop video frame
             fig, ax = plt.subplots()
             ax.imshow(cropped_frame)    # plot wanted frame of video
+            embed()
+            quit()
         else:
-           print("Could not read frame number %i either failed to open movie or beyond maximum frame number!" % frame_number)
-           return []
+            print("Could not read frame number %i either failed to open movie or beyond maximum frame number!" % frame_number)
+            return []
         plt.title(filename)
-        plt.show(block=True)
+        plt.show()
         
         return filename
 
