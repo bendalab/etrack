@@ -50,7 +50,7 @@ class CropVideo():
 
     @staticmethod
     def parser_crop_frame(data_frame, marker_crop_positions):
-
+        
         # load the four marker positions 
         bottom_left_x, bottom_left_y, bottom_right_x, bottom_right_y, top_left_x, top_left_y, top_right_x, top_right_y = assign_marker_positions(marker_crop_positions)
 
@@ -79,18 +79,17 @@ class CropVideo():
             success, frame = video.read()   # frame = actual video data matrix
             frame_counter += 1
         if success:
+            
             cropped_frame = CropVideo.parser_crop_frame(frame, marker_crop_positions) # crop video frame
-            fig, ax = plt.subplots()
-            ax.imshow(cropped_frame)    # plot wanted frame of video
-            embed()
-            quit()
+            # fig, ax = plt.subplots()
+            # ax.imshow(cropped_frame)    # plot wanted frame of video
+            # plt.title(filename)
+            # plt.show(block=True)    
         else:
             print("Could not read frame number %i either failed to open movie or beyond maximum frame number!" % frame_number)
             return []
-        plt.title(filename)
-        plt.show()
         
-        return filename
+        return cropped_frame
 
 def main(args: list=None):
     # parser arguments: use -h or --help! 

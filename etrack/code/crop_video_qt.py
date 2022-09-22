@@ -7,6 +7,9 @@ import sys
 from crop_video import CropVideo
 
 from IPython import embed
+import matplotlib.pyplot as plt
+import cv2
+import numpy as np
 
 # TO DO:
 
@@ -14,6 +17,7 @@ from IPython import embed
     # same for default video file path
 # toggle buttons to make different combinations of VideoTools
 # add only unique files (when using the add Button)?
+# maybe help text when hovering over button? (https://stackoverflow.com/questions/20399243/display-message-when-hovering-over-something-with-mouse-cursor-in-python)
 
 
 class FileSelector(QWidget):
@@ -97,12 +101,12 @@ class VideoTools(QWidget):
         self.file_selector = file_selector
         
         hl = QHBoxLayout()
-
+        
         mark_crop_positions_btn = QPushButton('mark crop positions')
         mark_crop_positions_btn.clicked.connect(self.mark_crop_positions)
 
         plot_btn = QPushButton('plot frame')
-        plot_btn.setCheckable(True)
+        # plot_btn.setCheckable(True)
         plot_btn.clicked.connect(self.plot_frame)
 
         crop_btn = QPushButton('crop video')
@@ -125,19 +129,31 @@ class VideoTools(QWidget):
     def mark_crop_positions(self):  # theoretically markers only needed for first video
         self.frame_number = self.file_selector.spinbox_value()
         self.file_list = self.file_selector.item_list()
-        self.all_marker_crop_positions = []
-        for file in self.file_list:
-            self.marker_crop_positions = CropVideo.parser_mark_crop_positions(file, self.frame_number)
-            self.all_marker_crop_positions.append(self.marker_crop_positions)
-
+        self.crop_positions = CropVideo.parser_mark_crop_positions(self.file_list[0], self.frame_number)
+            
     def plot_frame(self):
-        for file, marker in zip(self.file_list, self.all_marker_crop_positions):
-            file_name = CropVideo.parser_plot_frame(file, self.frame_number, marker)
-            # problem: plt.subplots already making window, plt.show showing figure either as black screen or extremly late..
-            # but neither CPU or RAM overloaded.. figure showing right before closing embed
+        self.cropped_frame_list = []
+        for file in self.file_list:
+            cropped_frame = CropVideo.parser_plot_frame(file, self.frame_number, self.crop_positions)
+            self.cropped_frame_list.append(cropped_frame)
+
+        # source: https://engineeringfordatascience.com/posts/matplotlib_subplots/
+        ncols = 3
+        # calculate number of rows
+        nrows = len(self.cropped_frame_list) // ncols + (len(self.cropped_frame_list) % ncols > 0)
+
+        plt.subplots_adjust(hspace=0.3)
+        plt.suptitle("plot frame of videos, frame number = %i" % self.frame_number, fontsize=12)
         
-        print('plot frame')
-        # get marker positions
+        for n, (frame, filename) in enumerate(zip(self.cropped_frame_list, self.file_list)):
+            # add a new subplot iteratively using nrows and cols
+            ax = plt.subplot(nrows, ncols, n + 1)
+          
+            filename = filename.split('/')[-1]
+            ax.imshow(frame)
+            ax.set_title(filename, fontsize=11)
+
+        plt.show()
         
     def crop_video(self):
         print('crop video')
