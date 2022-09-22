@@ -29,8 +29,8 @@ class CropVideo():
         # np.save('marker_crop_positions', marker_crop_positions)
         return marker_crop_positions
 
- 
-    def parser_cut_out_video_parser(self, video_path: str, output_dir: str, start_pix: tuple, size: tuple):
+    @staticmethod
+    def parser_cut_out_video_parser(video_path: str, output_dir: str, start_pix: tuple, size: tuple):
         ext = os.path.basename(video_path).strip().split('.')[-1]
         print(ext)
         

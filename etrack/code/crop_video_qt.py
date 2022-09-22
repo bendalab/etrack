@@ -10,6 +10,7 @@ from IPython import embed
 import matplotlib.pyplot as plt
 import cv2
 import numpy as np
+from calibration_functions import *
 
 # TO DO:
 
@@ -18,10 +19,9 @@ import numpy as np
 # toggle buttons to make different combinations of VideoTools
 # add only unique files (when using the add Button)?
 # maybe help text when hovering over button? (https://stackoverflow.com/questions/20399243/display-message-when-hovering-over-something-with-mouse-cursor-in-python)
-
+# clean up functions.. maybe merge calibration functions with crop video or new class
 
 class FileSelector(QWidget):
-
     def __init__(self):
         super().__init__()
 
@@ -76,10 +76,12 @@ class FileSelector(QWidget):
         for item in listItems:
             self._display_file_list.takeItem(self._display_file_list.row(item))
     
+
     def _frame_spinbox_value(self):
         print("current value:"+str(self.frame_spinbox.value()))
         self._spinbox_value = self.frame_spinbox.value()
     
+
     def item_list(self):
         self._file_list = []
         for i in range(self._display_file_list.count()): 
@@ -89,6 +91,7 @@ class FileSelector(QWidget):
         
         return self._file_list
     
+
     def spinbox_value(self):
         return self.frame_spinbox.value()
 
@@ -99,7 +102,10 @@ class VideoTools(QWidget):
         super().__init__()
         
         self.file_selector = file_selector
-        
+
+        self.frame_number = self.file_selector.spinbox_value()
+        self.file_list = self.file_selector.item_list()
+
         hl = QHBoxLayout()
         
         mark_crop_positions_btn = QPushButton('mark crop positions')
@@ -126,12 +132,12 @@ class VideoTools(QWidget):
 
         self.setLayout(hl)
 
-    def mark_crop_positions(self):  # theoretically markers only needed for first video
-        self.frame_number = self.file_selector.spinbox_value()
-        self.file_list = self.file_selector.item_list()
+
+    def mark_crop_positions(self):  # set marker for first (!) video, used for all following videos
         self.crop_positions = CropVideo.parser_mark_crop_positions(self.file_list[0], self.frame_number)
             
-    def plot_frame(self):
+
+    def plot_frame(self):   # check how croppping for the different videos would look like
         self.cropped_frame_list = []
         for file in self.file_list:
             cropped_frame = CropVideo.parser_plot_frame(file, self.frame_number, self.crop_positions)
@@ -139,28 +145,40 @@ class VideoTools(QWidget):
 
         # source: https://engineeringfordatascience.com/posts/matplotlib_subplots/
         ncols = 3
-        # calculate number of rows
-        nrows = len(self.cropped_frame_list) // ncols + (len(self.cropped_frame_list) % ncols > 0)
+        nrows = len(self.cropped_frame_list) // ncols + (len(self.cropped_frame_list) % ncols > 0)  # self adjusting row number depending on number of videos
 
         plt.subplots_adjust(hspace=0.3)
         plt.suptitle("plot frame of videos, frame number = %i" % self.frame_number, fontsize=12)
         
         for n, (frame, filename) in enumerate(zip(self.cropped_frame_list, self.file_list)):
-            # add a new subplot iteratively using nrows and cols
-            ax = plt.subplot(nrows, ncols, n + 1)
+            ax = plt.subplot(nrows, ncols, n + 1)   # add subplot for each video/frame
+          
+            ax.imshow(frame)    # plot frame
           
             filename = filename.split('/')[-1]
-            ax.imshow(frame)
             ax.set_title(filename, fontsize=11)
-
         plt.show()
         
+
     def crop_video(self):
         print('crop video')
-    
+        
+        embed()
+        quit()
+        # file list empty..
+        
+        for file in self.file_list:
+            marker_crop_positions = CropVideo.parser_mark_crop_positions(file, self.frame_number)
+            
+            bottom_left_x, bottom_left_y, bottom_right_x, bottom_right_y, top_left_x, top_left_y, top_right_x, top_right_y = assign_marker_positions(marker_crop_positions)
+
+            result = CropVideo.parser_cut_out_video_parser(file, "/home/student/etrack/videos", (bottom_left_x, bottom_left_y), (top_right_x, top_right_y))    # actual cropping of video
+
+
     def print_parameter(self):
         print('print parameter')
     
+
     def set_crop_parameter(self):
         print('set crop parameter')
         
