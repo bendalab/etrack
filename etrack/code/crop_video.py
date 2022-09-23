@@ -19,6 +19,7 @@ class CropVideo():
 
     @staticmethod
     def parser_mark_crop_positions(file_name, frame_number):
+        print('parser mark crop position')
         
         task = MarkerTask("crop area", ["bottom left corner", "top left corner", "top right corner", "bottom right corner"], "Mark crop area")
         im = ImageMarker([task])

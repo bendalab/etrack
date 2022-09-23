@@ -14,12 +14,17 @@ from calibration_functions import *
 
 # TO DO:
 
+# layout management...
+
 # implement option to change default frame number value?
     # same for default video file path
 # toggle buttons to make different combinations of VideoTools
 # add only unique files (when using the add Button)?
 # maybe help text when hovering over button? (https://stackoverflow.com/questions/20399243/display-message-when-hovering-over-something-with-mouse-cursor-in-python)
 # clean up functions.. maybe merge calibration functions with crop video or new class
+# source and destination folder as QFileDialog?
+
+# ffmpeg has to be installed...!
 
 class FileSelector(QWidget):
     def __init__(self):
@@ -28,73 +33,70 @@ class FileSelector(QWidget):
         hl = QHBoxLayout()
         vl = QVBoxLayout()
         
-        self._display_file_list = QListWidget()
+        self.display_item_list = QListWidget()
         group = QGroupBox()
         
+        
         addButton = QPushButton('add')
-        addButton.clicked.connect(self._open_file)
+        addButton.clicked.connect(self.open_file)
 
         removeButton = QPushButton('remove')
-        removeButton.clicked.connect(self._remove_file)
+        removeButton.clicked.connect(self.remove_file)
         
         self.frame_spinbox = QSpinBox()
         self.frame_spinbox.setValue(10)
-        self.frame_spinbox.valueChanged.connect(self._frame_spinbox_value)
+        self.frame_spinbox.valueChanged.connect(self.frame_spinbox_value)
         
+        browseButton = QPushButton('browse')
+        browseButton.clicked.connect(self.destination_path)
+
         vl.addWidget(addButton)
         vl.addWidget(removeButton)
         group.setLayout(vl)
         
-        hl.addWidget(self._display_file_list)
+        hl.addWidget(self.display_item_list)
         hl.addWidget(group)
         hl.addWidget(self.frame_spinbox)
         self.setLayout(hl)
     
 
-    def _open_file(self):
+    def open_file(self):
         fileName = QFileDialog.getOpenFileNames(self, str("Select Video Files"), "/home/student/etrack/videos", str('Video Files(*.mp4)'))
-        print(fileName[0], type(fileName[0]))
-        self._display_file_list.addItems(fileName[0])
-        
-        # each file unique?:
-        
-        # self._fileName_new = []
-        # for f in fileName[0]:
-        #     if f not in self._fileName_new:
-        #         self._fileName_new.append(f)
-        
-        # def _refresh_file(self): # improvised...
-        #     self._display_file_list.addItems(self._fileName_new)
+        print('open file', fileName[0])
+        self.display_item_list.addItems(fileName[0])        
+        # each file unique?
         
              
-    def _remove_file(self):
+    def remove_file(self):
         print('remove File')
 
-        listItems = self._display_file_list.selectedItems()
+        listItems = self.display_item_list.selectedItems()
         if not listItems:
             return        
         for item in listItems:
-            self._display_file_list.takeItem(self._display_file_list.row(item))
+            self.display_item_list.takeItem(self.display_item_list.row(item))
     
 
-    def _frame_spinbox_value(self):
+    def frame_spinbox_value(self):
         print("current value:"+str(self.frame_spinbox.value()))
-        self._spinbox_value = self.frame_spinbox.value()
+        self.spinbox_value = self.frame_spinbox.value()
     
 
     def item_list(self):
-        self._file_list = []
-        for i in range(self._display_file_list.count()): 
-            item = self._display_file_list.item(i).text()
-            if item not in self._file_list:
-                self._file_list.append(self._display_file_list.item(i).text())
-        
-        return self._file_list
+        self.list_items = []
+        for i in range(self.display_item_list.count()): 
+            item = self.display_item_list.item(i).text()
+            if item not in self.list_items:
+                self.list_items.append(self.display_item_list.item(i).text())
+        return self.list_items
     
 
     def spinbox_value(self):
         return self.frame_spinbox.value()
 
+    def destination_path(self):
+        return print('browse')
+        # file = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
 
 class VideoTools(QWidget):
     
@@ -102,9 +104,10 @@ class VideoTools(QWidget):
         super().__init__()
         
         self.file_selector = file_selector
-
-        self.frame_number = self.file_selector.spinbox_value()
-        self.file_list = self.file_selector.item_list()
+        
+        # how to define them for the whole class?
+        # self.frame_number = self.file_selector.spinbox_value()
+        # self.file_list = self.file_selector.item_list()
 
         hl = QHBoxLayout()
         
@@ -134,10 +137,17 @@ class VideoTools(QWidget):
 
 
     def mark_crop_positions(self):  # set marker for first (!) video, used for all following videos
+        self.file_list = self.file_selector.item_list()
+        self.frame_number = self.file_selector.spinbox_value()
+        
+
         self.crop_positions = CropVideo.parser_mark_crop_positions(self.file_list[0], self.frame_number)
-            
+
 
     def plot_frame(self):   # check how croppping for the different videos would look like
+        self.file_list = self.file_selector.item_list()
+        self.frame_number = self.file_selector.spinbox_value()
+
         self.cropped_frame_list = []
         for file in self.file_list:
             cropped_frame = CropVideo.parser_plot_frame(file, self.frame_number, self.crop_positions)
@@ -162,18 +172,17 @@ class VideoTools(QWidget):
 
     def crop_video(self):
         print('crop video')
+        self.file_list = self.file_selector.item_list()
+        self.frame_number = self.file_selector.spinbox_value()
         
-        embed()
-        quit()
         # file list empty..
         
         for file in self.file_list:
             marker_crop_positions = CropVideo.parser_mark_crop_positions(file, self.frame_number)
             
             bottom_left_x, bottom_left_y, bottom_right_x, bottom_right_y, top_left_x, top_left_y, top_right_x, top_right_y = assign_marker_positions(marker_crop_positions)
-
-            result = CropVideo.parser_cut_out_video_parser(file, "/home/student/etrack/videos", (bottom_left_x, bottom_left_y), (top_right_x, top_right_y))    # actual cropping of video
-
+            result = CropVideo.parser_cut_out_video_parser(file, "/home/student/etrack/cropped_videos", (bottom_left_x, bottom_left_y), (top_right_x, top_right_y))  
+            print(self.file_list)
 
     def print_parameter(self):
         print('print parameter')
