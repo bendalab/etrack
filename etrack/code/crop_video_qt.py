@@ -1,7 +1,7 @@
 from email.charset import QP
 from PyQt6.QtGui import *
-from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
+from PyQt6.QtWidgets import *
 import sys
 
 from crop_video import CropVideo
@@ -30,12 +30,18 @@ class FileSelector(QWidget):
     def __init__(self):
         super().__init__()
 
+        gl = QGridLayout()
+        self.setLayout(gl)
+
         hl = QHBoxLayout()
         vl = QVBoxLayout()
+        hl2 = QHBoxLayout()
+        vl2 = QHBoxLayout()
         
         self.display_item_list = QListWidget()
+        self.destination = QListWidget()
         group = QGroupBox()
-        
+        group2 = QGroupBox()
         
         addButton = QPushButton('add')
         addButton.clicked.connect(self.open_file)
@@ -53,11 +59,22 @@ class FileSelector(QWidget):
         vl.addWidget(addButton)
         vl.addWidget(removeButton)
         group.setLayout(vl)
+
+        gl.addWidget(self.display_item_list, 0, 0)
+        gl.addWidget(group, 0, 1)
+
+        gl.addWidget(self.destination, 1, 0)
+        gl.addWidget(browseButton, 1, 1)
         
-        hl.addWidget(self.display_item_list)
-        hl.addWidget(group)
-        hl.addWidget(self.frame_spinbox)
-        self.setLayout(hl)
+        # hl2.addWidget(self.destination)
+        # hl2.addWidget(browseButton)
+        # group2.setLayout(vl2)
+
+        # hl.addWidget(self.display_item_list)
+        # hl.addWidget(group)
+        # # hl.addWidget(self.destination)
+        # hl.addWidget(self.frame_spinbox)
+        # self.setLayout(hl)
     
 
     def open_file(self):
@@ -201,8 +218,8 @@ class MainWindow(QMainWindow):
         self.fs = FileSelector()
         self.vt = VideoTools(self.fs)
     
-        layout = QVBoxLayout()
-        layout.addWidget(self.fs)
+        layout = QGridLayout()
+        layout.addWidget(self.fs,)
         layout.addWidget(self.vt)
         
         widget = QWidget()
