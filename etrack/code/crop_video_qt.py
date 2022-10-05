@@ -31,56 +31,86 @@ class FileSelector(QWidget):
         super().__init__()
 
         gl = QGridLayout()
-        self.setLayout(gl)
+        gl.addWidget(self.add_remove_group(), 0, 1)
+        gl.addWidget(self.browse_group(), 1, 1)
+        gl.addWidget(self.item_list(), 0, 0)
+        gl.addWidget(self.destination_path(), 1, 0)
+        gl.addWidget(self.frame_spinbox(), 0, 2, -1 ,1)
+        self.setLayout(gl)        
 
-        hl = QHBoxLayout()
-        vl = QVBoxLayout()
-        hl2 = QHBoxLayout()
-        vl2 = QHBoxLayout()
+
+    def item_list(self):
         
         self.display_item_list = QListWidget()
-        self.destination = QListWidget()
-        group = QGroupBox()
-        group2 = QGroupBox()
+
+        self.list_items = []
+        for i in range(self.display_item_list.count()): 
+            item = self.display_item_list.item(i).text()
+            if item not in self.list_items:
+                self.list_items.append(self.display_item_list.item(i).text())
         
+        return self.display_item_list
+
+
+    def add_remove_group(self):
+        groupBox = QGroupBox()
+
         addButton = QPushButton('add')
         addButton.clicked.connect(self.open_file)
 
         removeButton = QPushButton('remove')
         removeButton.clicked.connect(self.remove_file)
         
-        self.frame_spinbox = QSpinBox()
-        self.frame_spinbox.setValue(10)
-        self.frame_spinbox.valueChanged.connect(self.frame_spinbox_value)
-        
+        vbox = QVBoxLayout()
+        vbox.addWidget(addButton)
+        vbox.addWidget(removeButton)
+
+        groupBox.setLayout(vbox)
+
+        return groupBox
+
+
+    def destination_path(self): # NOT WORKING YET
+        self.destination = QListWidget()
+        return print('browse')
+        # file = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
+
+        return self.destination
+
+
+    def browse_group(self):
+        groupBox = QGroupBox()
+
         browseButton = QPushButton('browse')
         browseButton.clicked.connect(self.destination_path)
 
-        vl.addWidget(addButton)
-        vl.addWidget(removeButton)
-        group.setLayout(vl)
+        vbox = QVBoxLayout()
+        vbox.addWidget(browseButton)
+        groupBox.setLayout(vbox)
+     
+        return groupBox
 
-        gl.addWidget(self.display_item_list, 0, 0)
-        gl.addWidget(group, 0, 1)
 
-        gl.addWidget(self.destination, 1, 0)
-        gl.addWidget(browseButton, 1, 1)
+    def frame_spinbox(self):
+        groupBox = QGroupBox()
+
+        frame_spinbox = QSpinBox()
+        frame_spinbox.setValue(10)
         
-        # hl2.addWidget(self.destination)
-        # hl2.addWidget(browseButton)
-        # group2.setLayout(vl2)
+        print("current value:"+str(frame_spinbox.value()))
+        self.spinbox_value = frame_spinbox.value()
 
-        # hl.addWidget(self.display_item_list)
-        # hl.addWidget(group)
-        # # hl.addWidget(self.destination)
-        # hl.addWidget(self.frame_spinbox)
-        # self.setLayout(hl)
-    
+        vbox = QVBoxLayout()
+        vbox.addWidget(frame_spinbox)
+        groupBox.setLayout(vbox)
+
+        return groupBox
+
 
     def open_file(self):
         fileName = QFileDialog.getOpenFileNames(self, str("Select Video Files"), "/home/student/etrack/videos", str('Video Files(*.mp4)'))
         print('open file', fileName[0])
-        self.display_item_list.addItems(fileName[0])        
+        self.display_item_list.addItems(fileName[0])
         # each file unique?
         
              
@@ -92,28 +122,11 @@ class FileSelector(QWidget):
             return        
         for item in listItems:
             self.display_item_list.takeItem(self.display_item_list.row(item))
-    
 
-    def frame_spinbox_value(self):
-        print("current value:"+str(self.frame_spinbox.value()))
-        self.spinbox_value = self.frame_spinbox.value()
-    
-
-    def item_list(self):
-        self.list_items = []
-        for i in range(self.display_item_list.count()): 
-            item = self.display_item_list.item(i).text()
-            if item not in self.list_items:
-                self.list_items.append(self.display_item_list.item(i).text())
-        return self.list_items
-    
 
     def spinbox_value(self):
         return self.frame_spinbox.value()
 
-    def destination_path(self):
-        return print('browse')
-        # file = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
 
 class VideoTools(QWidget):
     
