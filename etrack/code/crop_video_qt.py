@@ -34,7 +34,7 @@ class FileSelector(QWidget):
         gl.addWidget(self.add_remove_group(), 0, 1)
         gl.addWidget(self.browse_group(), 1, 1)
         gl.addWidget(self.item_list(), 0, 0)
-        gl.addWidget(self.destination_path(), 1, 0)
+        gl.addWidget(self.destination_list(), 1, 0)
         gl.addWidget(self.frame_spinbox(), 0, 2, -1 ,1)
         self.setLayout(gl)        
 
@@ -70,43 +70,6 @@ class FileSelector(QWidget):
         return groupBox
 
 
-    def destination_path(self): # NOT WORKING YET
-        self.destination = QListWidget()
-        return print('browse')
-        # file = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
-
-        return self.destination
-
-
-    def browse_group(self):
-        groupBox = QGroupBox()
-
-        browseButton = QPushButton('browse')
-        browseButton.clicked.connect(self.destination_path)
-
-        vbox = QVBoxLayout()
-        vbox.addWidget(browseButton)
-        groupBox.setLayout(vbox)
-     
-        return groupBox
-
-
-    def frame_spinbox(self):
-        groupBox = QGroupBox()
-
-        frame_spinbox = QSpinBox()
-        frame_spinbox.setValue(10)
-        
-        print("current value:"+str(frame_spinbox.value()))
-        self.spinbox_value = frame_spinbox.value()
-
-        vbox = QVBoxLayout()
-        vbox.addWidget(frame_spinbox)
-        groupBox.setLayout(vbox)
-
-        return groupBox
-
-
     def open_file(self):
         fileName = QFileDialog.getOpenFileNames(self, str("Select Video Files"), "/home/student/etrack/videos", str('Video Files(*.mp4)'))
         print('open file', fileName[0])
@@ -122,6 +85,49 @@ class FileSelector(QWidget):
             return        
         for item in listItems:
             self.display_item_list.takeItem(self.display_item_list.row(item))
+
+
+    def destination_list(self):
+        self.destination = QListWidget()
+        return self.destination
+
+
+    def browse_group(self):
+        groupBox = QGroupBox()
+
+        browseButton = QPushButton('browse')
+        # browseButton.clicked.connect(self.destination_path)
+        browseButton.clicked.connect(self.browse_file)
+
+        vbox = QVBoxLayout()
+        vbox.addWidget(browseButton)
+        groupBox.setLayout(vbox)
+     
+        return groupBox
+
+
+    def browse_file(self):
+        self.file = str(QFileDialog.getExistingDirectory(self, "Select Directory", '/home/student/etrack/cropped_videos'))
+        
+        # make something to only let one entry in
+        # or better said replace the first one always again
+        self.destination.addItem(self.file)
+        return self.file
+
+    def frame_spinbox(self):
+        groupBox = QGroupBox()
+
+        frame_spinbox = QSpinBox()
+        frame_spinbox.setValue(10)
+        
+        print("current value:"+str(frame_spinbox.value()))
+        self.spinbox_value = frame_spinbox.value()
+
+        vbox = QVBoxLayout()
+        vbox.addWidget(frame_spinbox)
+        groupBox.setLayout(vbox)
+
+        return groupBox
 
 
     def spinbox_value(self):
@@ -211,7 +217,7 @@ class VideoTools(QWidget):
             marker_crop_positions = CropVideo.parser_mark_crop_positions(file, self.frame_number)
             
             bottom_left_x, bottom_left_y, bottom_right_x, bottom_right_y, top_left_x, top_left_y, top_right_x, top_right_y = assign_marker_positions(marker_crop_positions)
-            result = CropVideo.parser_cut_out_video_parser(file, "/home/student/etrack/cropped_videos", (bottom_left_x, bottom_left_y), (top_right_x, top_right_y))  
+            result = CropVideo.parser_cut_out_video_parser(file, str(self.destination.item(0).text()), (bottom_left_x, bottom_left_y), (top_right_x, top_right_y))  
             print(self.file_list)
 
     def print_parameter(self):
