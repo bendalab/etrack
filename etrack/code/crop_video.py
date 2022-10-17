@@ -66,6 +66,7 @@ class CropVideo():
         # cropped_frame = np.mean(cropped_frame, axis=2)    # mean over 3rd dimension (RGB/color values)
         return cropped_frame
 
+
     @staticmethod
     def parser_plot_frame(filename, frame_number, marker_crop_positions):
         if not os.path.exists(filename):

@@ -114,6 +114,7 @@ class FileSelector(QWidget):
         self.destination.addItem(self.file)
         return self.file
 
+
     def frame_spinbox(self):
         groupBox = QGroupBox()
 

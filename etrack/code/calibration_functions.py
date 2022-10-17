@@ -92,6 +92,7 @@ def crop_frame(frame, marker_positions):
 
     return cropped_frame, frame_width, frame_height, diff_width, diff_height, x_width, x_height
 
+
 def rotate_video():
         # mark corners of tank
         # diff in x / y pixels
