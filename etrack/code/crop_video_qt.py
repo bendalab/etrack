@@ -34,7 +34,7 @@ class FileSelector(QWidget):
         gl.addWidget(self.add_remove_group(), 0, 1)
         gl.addWidget(self.browse_group(), 1, 1)
         gl.addWidget(self.item_list(), 0, 0)
-        gl.addWidget(self.destination_list(), 1, 0)
+        gl.addWidget(self.destination_box(), 1, 0)
         gl.addWidget(self.frame_spinbox(), 0, 2, -1 ,1)
         self.setLayout(gl)        
 
@@ -87,7 +87,7 @@ class FileSelector(QWidget):
             self.display_item_list.takeItem(self.display_item_list.row(item))
 
 
-    def destination_list(self):
+    def destination_box(self):
         self.destination = QListWidget()
         return self.destination
 
@@ -96,8 +96,11 @@ class FileSelector(QWidget):
         groupBox = QGroupBox()
 
         browseButton = QPushButton('browse')
-        # browseButton.clicked.connect(self.destination_path)
+        
+        self.destination_list = []
+        
         browseButton.clicked.connect(self.browse_file)
+        browseButton.clicked.connect(self.add_browse_file)
 
         vbox = QVBoxLayout()
         vbox.addWidget(browseButton)
@@ -107,12 +110,21 @@ class FileSelector(QWidget):
 
 
     def browse_file(self):
-        self.file = str(QFileDialog.getExistingDirectory(self, "Select Directory", '/home/student/etrack/cropped_videos'))
-        
+        self.path = str(QFileDialog.getExistingDirectory(self, "Select Directory", '/home/student/etrack/cropped_videos'))
+        self.destination_list.append(self.path)
+        return self.path
+
+
+    def add_browse_file(self):
         # make something to only let one entry in
         # or better said replace the first one always again
-        self.destination.addItem(self.file)
-        return self.file
+        if len(self.destination_list) > 1:
+            self.destination_list[:] = self.destination_list[-1]
+            self.destination.addItem(np.unique(self.destination_list)[0])
+        else:
+            self.destination.addItem(self.path)
+        embed()
+        # quit()
 
 
     def frame_spinbox(self):
@@ -176,8 +188,7 @@ class VideoTools(QWidget):
     def mark_crop_positions(self):  # set marker for first (!) video, used for all following videos
         self.file_list = self.file_selector.item_list()
         self.frame_number = self.file_selector.spinbox_value()
-        
-
+    
         self.crop_positions = CropVideo.parser_mark_crop_positions(self.file_list[0], self.frame_number)
 
 
