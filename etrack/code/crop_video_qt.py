@@ -42,7 +42,8 @@ class FileSelector(QWidget):
     def item_list(self):
         
         self.display_item_list = QListWidget()
-
+        self.display_item_list.setMaximumHeight(400)
+        
         self.list_items = []
         for i in range(self.display_item_list.count()): 
             item = self.display_item_list.item(i).text()
@@ -72,14 +73,11 @@ class FileSelector(QWidget):
 
     def open_file(self):
         fileName = QFileDialog.getOpenFileNames(self, str("Select Video Files"), "/home/student/etrack/videos", str('Video Files(*.mp4)'))
-        print('open file', fileName[0])
         self.display_item_list.addItems(fileName[0])
         # each file unique?
         
              
     def remove_file(self):
-        print('remove File')
-
         listItems = self.display_item_list.selectedItems()
         if not listItems:
             return        
@@ -89,19 +87,19 @@ class FileSelector(QWidget):
 
     def destination_box(self):
         self.destination = QListWidget()
+        self.destination.setFixedHeight(30)
         return self.destination
 
 
     def browse_group(self):
         groupBox = QGroupBox()
-
         browseButton = QPushButton('browse')
+        browseButton.setFixedHeight(30)
         
         self.destination_list = []
         
         browseButton.clicked.connect(self.browse_file)
-        browseButton.clicked.connect(self.add_browse_file)
-
+        
         vbox = QVBoxLayout()
         vbox.addWidget(browseButton)
         groupBox.setLayout(vbox)
@@ -111,20 +109,11 @@ class FileSelector(QWidget):
 
     def browse_file(self):
         self.path = str(QFileDialog.getExistingDirectory(self, "Select Directory", '/home/student/etrack/cropped_videos'))
-        self.destination_list.append(self.path)
-        return self.path
-
-
-    def add_browse_file(self):
-        # make something to only let one entry in
-        # or better said replace the first one always again
-        if len(self.destination_list) > 1:
-            self.destination_list[:] = self.destination_list[-1]
-            self.destination.addItem(np.unique(self.destination_list)[0])
-        else:
+        self.destination.addItem(self.path)
+        if len(self.destination) > 1:
+            self.destination.clear()
             self.destination.addItem(self.path)
-        embed()
-        # quit()
+        return self.path        
 
 
     def frame_spinbox(self):
@@ -155,8 +144,9 @@ class VideoTools(QWidget):
         self.file_selector = file_selector
         
         # how to define them for the whole class?
-        # self.frame_number = self.file_selector.spinbox_value()
-        # self.file_list = self.file_selector.item_list()
+        self.frame_number = self.file_selector.spinbox_value
+        self.file_list = self.file_selector.item_list
+        
 
         hl = QHBoxLayout()
         
@@ -185,18 +175,14 @@ class VideoTools(QWidget):
         self.setLayout(hl)
 
 
-    def mark_crop_positions(self):  # set marker for first (!) video, used for all following videos
-        self.file_list = self.file_selector.item_list()
-        self.frame_number = self.file_selector.spinbox_value()
-    
+    def mark_crop_positions(self):  # set marker for first (!) video, used for all following videos    
         self.crop_positions = CropVideo.parser_mark_crop_positions(self.file_list[0], self.frame_number)
 
 
     def plot_frame(self):   # check how croppping for the different videos would look like
-        self.file_list = self.file_selector.item_list()
-        self.frame_number = self.file_selector.spinbox_value()
-
         self.cropped_frame_list = []
+        embed()
+        quit()
         for file in self.file_list:
             cropped_frame = CropVideo.parser_plot_frame(file, self.frame_number, self.crop_positions)
             self.cropped_frame_list.append(cropped_frame)
@@ -220,9 +206,7 @@ class VideoTools(QWidget):
 
     def crop_video(self):
         print('crop video')
-        self.file_list = self.file_selector.item_list()
-        self.frame_number = self.file_selector.spinbox_value()
-        
+
         # file list empty..
         
         for file in self.file_list:
