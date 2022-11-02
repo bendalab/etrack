@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import glob
 import os
+import sys
 import math
 import cv2
 import argparse
@@ -31,7 +32,7 @@ class CropVideo():
         return marker_crop_positions
 
     @staticmethod
-    def parser_cut_out_video_parser(video_path: str, output_dir: str, start_pix: tuple, size: tuple):
+    def parser_cut_out_video_parser(video_path: str, output_dir: str, start_pix: tuple, size: tuple, stdout=None):
         ext = os.path.basename(video_path).strip().split('.')[-1]
         print(ext)
         
@@ -45,7 +46,7 @@ class CropVideo():
         
         ff = FFmpeg(inputs={video_path: None},  # video cropping module
                     outputs={result: f'-y -filter:v crop={size[0]-start_pix[0]}:{start_pix[1] - size[1]}:{start_pix[0]}:{size[1]}'})    # crop=out_w:out_h:x:y
-        ff.run()
+        ff.run(stdout=sys.stdout, stderr=sys.stderr)
         return result
     
 

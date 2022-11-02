@@ -3,6 +3,7 @@ from PyQt6.QtGui import *
 from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
 import sys
+import os
 
 from crop_video import CropVideo
 
@@ -14,22 +15,28 @@ from calibration_functions import *
 
 # TO DO:
 
-# layout management...
+# terminal output or progress bar, maybe first for print parameter
 
+# layout management...
 # implement option to change default frame number value?
     # same for default video file path
 # toggle buttons to make different combinations of VideoTools
 # add only unique files (when using the add Button)?
 # maybe help text when hovering over button? (https://stackoverflow.com/questions/20399243/display-message-when-hovering-over-something-with-mouse-cursor-in-python)
 # clean up functions.. maybe merge calibration functions with crop video or new class
-# source and destination folder as QFileDialog?
 
 # ffmpeg has to be installed...!
 
 class FileSelector(QWidget):
+    """Widgets to 
+
+    Args:
+        QWidget (_type_): _description_
+    """
     def __init__(self):
         super().__init__()
 
+        # layout for widgets in FileSelector
         gl = QGridLayout()
         gl.addWidget(self.add_remove_group(), 0, 1)
         gl.addWidget(self.browse_group(), 1, 1)
@@ -51,6 +58,7 @@ class FileSelector(QWidget):
 
         addButton = QPushButton('add')
         addButton.clicked.connect(self.open_file)
+        # addButton.clicked.connect(self.add_files_done)
 
         removeButton = QPushButton('remove')
         removeButton.clicked.connect(self.remove_file)
@@ -123,6 +131,7 @@ class FileSelector(QWidget):
         return self.frame_spinbox.value()
 
 
+
 class VideoTools(QWidget):
     
     def __init__(self, file_selector: FileSelector):
@@ -139,6 +148,7 @@ class VideoTools(QWidget):
         hl = QHBoxLayout()
         
         self.mark_crop_positions_btn = QPushButton('mark crop positions')
+        # self.mark_crop_positions_btn.setEnabled(False)
         self.mark_crop_positions_btn.clicked.connect(self.mark_crop_positions)
         self.mark_crop_positions_btn.clicked.connect(self.mark_crop_positions_done)
         
@@ -170,6 +180,10 @@ class VideoTools(QWidget):
 
         self.setLayout(hl)
 
+
+    def add_files_done(self):
+        self.mark_crop_positions_btn.setEnabled(True)
+    
 
     def mark_crop_positions_done(self):
         self.plot_btn.setEnabled(True)
@@ -236,17 +250,48 @@ class VideoTools(QWidget):
 
     def set_crop_parameter(self):
         print('set crop parameter')
-        
+
+
+class OutLog:
+    def __init__(self, edit, out=None, color=None):
+        """(edit, out=None, color=None) -> can write stdout, stderr to a
+        QTextEdit.
+        edit = QTextEdit
+        out = alternate stream ( can be the original sys.stdout )
+        color = alternate color (i.e. color stderr a different color)
+        """
+        self.edit = edit
+        self.out = None
+        self.color = color
+
+    def fileno(self):
+        return 0
+
+    def write(self, m):
+        if self.color:
+            tc = self.edit.textColor()
+            self.edit.setTextColor(self.color)
+
+        self.edit.moveCursor(QTextCursor.MoveOperation.End)
+        self.edit.insertPlainText( m )
+
+        if self.color:
+            self.edit.setTextColor(tc)
+
+        if self.out:
+            self.out.write(m)
+
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-
+        
         self.setWindowTitle("etrack app")
         
         self.fs = FileSelector()
         self.vt = VideoTools(self.fs)
-
+        
         layout = QGridLayout()
 
         file_selector_label = QLabel('File Selector Tools:')
@@ -261,15 +306,23 @@ class MainWindow(QMainWindow):
 
         layout.setSpacing(20)
         
+
+        label = QLabel(self.tr("Terminal output"))
+        self.te = QTextEdit()
+        sys.stdout = OutLog(self.te, sys.stdout) #
+        sys.stderr = OutLog(self.te, sys.stderr, QColor(255,0,0) )
+
+        # layout
+        layout.addWidget(label)
+        layout.addWidget(self.le)
+        layout.addWidget(self.te)
+
+        # create connection
+        self.le.returnPressed.connect(self.run_command)
+        
         widget = QWidget()
         widget.setLayout(layout)
         self.setCentralWidget(widget)
-
-
-
-
-
-        
 
 app = QApplication(sys.argv)
 w = MainWindow()
